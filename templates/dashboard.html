@@ -1,0 +1,477 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - StudyBuddy</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <style>
+        .dashboard-layout {
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+        }
+        .topbar {
+            height: 64px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .dashboard-body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+        }
+        .dashboard-header {
+            margin-bottom: var(--spacing-xl);
+        }
+        .dashboard-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+        .dashboard-header p {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .stat-info h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 var(--spacing-xs);
+        }
+        .stat-info p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+        }
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+        .material-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            transition: all var(--transition-base);
+            text-decoration: none;
+            display: block;
+        }
+        .material-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
+        }
+        .material-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-md);
+        }
+        .material-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(91,79,233,0.1);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+        .material-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+        .material-subject {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        .material-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border);
+        }
+        .material-date {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+        .upload-card {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border-dark);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            text-decoration: none;
+            min-height: 160px;
+        }
+        .upload-card:hover {
+            border-color: var(--primary);
+            background: rgba(91,79,233,0.02);
+        }
+        .upload-card svg { color: var(--text-tertiary); margin-bottom: var(--spacing-md); }
+        .upload-card h3 { font-size: 1rem; color: var(--text-primary); margin-bottom: var(--spacing-xs); }
+        .upload-card p { font-size: 0.875rem; color: var(--text-tertiary); margin: 0; }
+        .recent-section { margin-bottom: var(--spacing-xl); }
+        .attempts-list { display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .attempt-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md) var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .attempt-info h4 { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-xs); }
+        .attempt-info p { font-size: 0.8rem; color: var(--text-tertiary); margin: 0; }
+        .score-badge {
+            padding: 0.375rem 0.875rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .score-high { background: rgba(16,185,129,0.1); color: var(--success); }
+        .score-mid { background: rgba(245,158,11,0.1); color: var(--warning); }
+        .score-low { background: rgba(239,68,68,0.1); color: var(--error); }
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-tertiary);
+        }
+        .empty-state svg { margin: 0 auto var(--spacing-md); }
+        @media(max-width:768px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .dashboard-body { padding: var(--spacing-md); }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <nav class="topbar">
+            <a href="{% url 'landing' %}" class="topbar-logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#5B4FE9"/>
+                    <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" fill="white"/>
+                </svg>
+                StudyBuddy
+            </a>
+            <div class="topbar-right">
+    <a href="{% url 'upload' %}" class="btn btn-primary btn-sm">+ Upload Material</a>
+    <a href="{% url 'progress' %}" class="btn btn-ghost btn-sm">📊 Progress</a>
+    <div style="position:relative;">
+        <div style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;" id="profileToggle">
+            <div class="avatar">{{ request.user.username|first|upper }}</div>
+            <span style="font-size:0.9rem;color:var(--text-secondary);">{{ request.user.username }}</span>
+        </div>
+        <div id="profileDropdown" style="display:none;position:absolute;right:0;top:48px;width:240px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:200;padding:var(--spacing-md);">
+            <p style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">{{ request.user.username }}</p>
+            <p style="font-size:0.8rem;color:var(--text-tertiary);margin-bottom:var(--spacing-md);">{{ request.user.email }}</p>
+            <div style="background:var(--bg-tertiary);border-radius:var(--radius-md);padding:var(--spacing-md);margin-bottom:var(--spacing-md);">
+                <p style="font-size:0.75rem;color:var(--text-tertiary);margin-bottom:var(--spacing-sm);">STATS</p>
+                <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:4px;">📚 {{ materials|length }} Materials</p>
+                <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:4px;">📝 {{ attempts|length }} Quizzes</p>
+                <a href="{% url 'progress' %}" style="font-size:0.875rem;color:var(--primary);">View full progress →</a>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:var(--spacing-md);">
+                <a href="{% url 'progress' %}" style="display:block;padding:0.5rem;border-radius:var(--radius-md);color:var(--text-secondary);font-size:0.875rem;text-decoration:none;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='none'">📊 My Progress</a>
+                <a href="{% url 'logout' %}" style="display:block;padding:0.5rem;border-radius:var(--radius-md);color:var(--error);font-size:0.875rem;text-decoration:none;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='none'">🚪 Logout</a>
+            </div>
+        </div>
+    </div>
+</div>
+        </nav>
+
+        <div class="dashboard-body">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" style="margin-bottom:1rem;">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="dashboard-header">
+                <h1>Welcome back, {{ request.user.username }}! 👋</h1>
+                <p>Here's your study overview</p>
+            </div>
+            
+            <!-- Search + Filter Bar -->
+            <div style="display:flex;gap:var(--spacing-md);margin-bottom:var(--spacing-xl);flex-wrap:wrap;">
+                <form method="GET" style="display:flex;gap:var(--spacing-md);flex:1;flex-wrap:wrap;">
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ search }}"
+                        placeholder="🔍 Search materials..."
+                        class="form-input"
+                        style="flex:1;min-width:200px;"
+                    >
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    {% if search or subject_filter %}
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Clear</a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Subject Filter Tabs -->
+            {% if subjects %}
+            <div style="display:flex;gap:var(--spacing-sm);flex-wrap:wrap;margin-bottom:var(--spacing-xl);">
+                <a href="{% url 'dashboard' %}{% if search %}?search={{ search }}{% endif %}"
+                class="btn btn-sm {% if not subject_filter %}btn-primary{% else %}btn-secondary{% endif %}">
+                    All
+                </a>
+                {% for subject in subjects %}
+                <a href="?subject={{ subject }}{% if search %}&search={{ search }}{% endif %}"
+                class="btn btn-sm {% if subject_filter == subject %}btn-primary{% else %}btn-secondary{% endif %}">
+                    {{ subject }}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(91,79,233,0.1);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5B4FE9" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ materials|length }}</h3>
+                        <p>Study Materials</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(16,185,129,0.1);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ attempts|length }}</h3>
+                        <p>Quizzes Taken</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(245,158,11,0.1);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <h3><a href="{% url 'progress' %}" style="color:inherit;text-decoration:none;">View</a></h3>
+                        <p>Progress Report</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if subject_filter or search %}
+            <!-- Flat view when filtering -->
+            <h2 class="section-title">
+                {% if subject_filter %}{{ subject_filter }}{% else %}Search Results{% endif %}
+                <span style="font-size:0.875rem;font-weight:400;color:var(--text-tertiary);">({{ materials|length }} found)</span>
+            </h2>
+            <div class="materials-grid">
+                <a href="{% url 'upload' %}" class="upload-card">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <h3>Upload New</h3>
+                    <p>Add PDF material</p>
+                </a>
+                {% for material in materials %}
+                <a href="{% url 'material_detail' material.pk %}" class="material-card">
+                    <div class="material-card-header">
+                        <div class="material-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                        </div>
+                        <span class="badge badge-primary">{{ material.subject }}</span>
+                    </div>
+                    <p class="material-title">{{ material.title }}</p>
+                    <div class="material-meta">
+                        <span class="material-date">{{ material.uploaded_at|date:"M d, Y" }}</span>
+                        <span class="badge badge-success">Ready</span>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="empty-state" style="grid-column:1/-1;">
+                    <p>No materials found.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <!-- Grouped by subject -->
+            {% if grouped %}
+                {% for subject, mats in grouped.items %}
+                <div style="margin-bottom:var(--spacing-2xl);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-lg);">
+                        <h2 class="section-title" style="margin:0;">📚 {{ subject }}</h2>
+                        <span style="font-size:0.875rem;color:var(--text-tertiary);">{{ mats|length }} material{{ mats|length|pluralize }}</span>
+                    </div>
+                    <div class="materials-grid">
+                        {% for material in mats %}
+                        <a href="{% url 'material_detail' material.pk %}" class="material-card">
+                            <div class="material-card-header">
+                                <div class="material-icon">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                </div>
+                                <span class="badge badge-primary">{{ material.subject }}</span>
+                            </div>
+                            <p class="material-title">{{ material.title }}</p>
+                            <div class="material-meta">
+                                <span class="material-date">{{ material.uploaded_at|date:"M d, Y" }}</span>
+                                <span class="badge badge-success">Ready</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="materials-grid">
+                <a href="{% url 'upload' %}" class="upload-card">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <h3>Upload New Material</h3>
+                    <p>Add PDF notes or question papers</p>
+                </a>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- Recent Attempts -->
+            {% if attempts %}
+            <div class="recent-section">
+                <h2 class="section-title">Recent Quiz Attempts</h2>
+                <div class="attempts-list">
+                    {% for attempt in attempts %}
+                    <div class="attempt-item">
+                        <div class="attempt-info">
+                            <h4>{{ attempt.material.title }}</h4>
+                            <p>{{ attempt.attempted_at|date:"M d, Y • h:i A" }} • {{ attempt.total_questions }} questions</p>
+                        </div>
+                        <span class="score-badge {% if attempt.percentage >= 70 %}score-high{% elif attempt.percentage >= 40 %}score-mid{% else %}score-low{% endif %}">
+                            {{ attempt.percentage }}%
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        document.getElementById('profileToggle').addEventListener('click', function() {
+            const d = document.getElementById('profileDropdown');
+            d.style.display = d.style.display === 'none' ? 'block' : 'none';
+        });
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('profileToggle').contains(e.target)) {
+                document.getElementById('profileDropdown').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

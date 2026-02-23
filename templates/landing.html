@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBuddy - AI-Powered Exam Preparation</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="{% url 'landing' %}" class="navbar-logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#5B4FE9"/>
+                    <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" fill="white"/>
+                </svg>
+                <span>StudyBuddy</span>
+            </a>
+            <ul class="navbar-menu" id="navMenu">
+                <li><a href="#features" class="navbar-link">Features</a></li>
+                <li><a href="#how-it-works" class="navbar-link">How It Works</a></li>
+                <li><a href="{% url 'login' %}" class="navbar-link">Login</a></li>
+                {% if user.is_authenticated %}
+                <li><a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a></li>
+                {% else %}
+                <li><a href="{% url 'register' %}" class="btn btn-primary btn-sm">Get Started</a></li>
+                {% endif %}
+            </ul>
+            <button class="navbar-toggle" id="navToggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">Ace Your Exams with<br><span class="gradient-text">AI-Powered Study</span></h1>
+                    <p class="hero-description">Upload past question papers, get instant AI-generated notes, flashcards, and personalized answers. Built for engineering students who want to study smarter.</p>
+                    <div class="hero-cta">
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+                        {% else %}
+                        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Start Learning Free</a>
+                        {% endif %}
+                        <a href="#how-it-works" class="btn btn-secondary btn-lg">See How It Works</a>
+                    </div>
+                    <p class="hero-note">✓ Free to use. No credit card required.</p>
+                </div>
+                <div class="hero-image">
+                    <div class="hero-mockup">
+                        <div class="mockup-window">
+                            <div class="mockup-header">
+                                <span class="mockup-dot"></span>
+                                <span class="mockup-dot"></span>
+                                <span class="mockup-dot"></span>
+                            </div>
+                            <div class="mockup-content">
+                                <div class="mockup-chat">
+                                    <div class="chat-message user">Explain binary search tree deletion</div>
+                                    <div class="chat-message ai">
+                                        <strong>Binary Search Tree Deletion</strong><br>
+                                        Three cases to consider:<br>
+                                        1. Node has no children...<br>
+                                        2. Node has one child...<br>
+                                        3. Node has two children...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Everything You Need to Master Your Exams</h2>
+                <p class="section-description">Powerful features designed specifically for engineering students</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color:rgba(91,79,233,0.1);color:#5B4FE9;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    </div>
+                    <h3 class="feature-title">Question Paper Analysis</h3>
+                    <p class="feature-description">Upload multiple past year papers. Our AI identifies patterns and generates comprehensive study notes automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color:rgba(16,185,129,0.1);color:#10B981;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                    </div>
+                    <h3 class="feature-title">Smart Flashcards</h3>
+                    <p class="feature-description">Automatically generated flashcards from your study material with spaced repetition.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color:rgba(245,158,11,0.1);color:#F59E0B;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <h3 class="feature-title">AI Chat Assistant</h3>
+                    <p class="feature-description">Ask questions about any topic. Get detailed answers referenced from your uploaded materials.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color:rgba(239,68,68,0.1);color:#EF4444;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </div>
+                    <h3 class="feature-title">Progress Tracking</h3>
+                    <p class="feature-description">Track which topics you've mastered. Stay motivated with visual progress indicators.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color:rgba(59,130,246,0.1);color:#3B82F6;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+                    </div>
+                    <h3 class="feature-title">Structured Notes</h3>
+                    <p class="feature-description">Get clean, organized notes with headings, bullet points, and examples.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color:rgba(139,92,246,0.1);color:#8B5CF6;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <h3 class="feature-title">Save Time</h3>
+                    <p class="feature-description">What takes hours of manual note-making, we do in minutes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-description">Get started in 3 simple steps</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Upload Your Materials</h3>
+                        <p class="step-description">Drop your past question papers and study notes (PDFs).</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3 class="step-title">AI Analyzes & Generates</h3>
+                        <p class="step-description">Our AI reads everything and creates structured notes and flashcards automatically.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Study & Ace Your Exam</h3>
+                        <p class="step-description">Chat with AI, review flashcards, and track your progress.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-box">
+                <h2 class="cta-title">Ready to Study Smarter?</h2>
+                <p class="cta-description">Join students who are acing their exams with AI-powered study tools</p>
+                <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Get Started for Free</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="navbar-logo">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <rect width="32" height="32" rx="8" fill="#5B4FE9"/>
+                            <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" fill="white"/>
+                        </svg>
+                        <span>StudyBuddy</span>
+                    </div>
+                    <p class="footer-tagline">AI-powered exam preparation for engineering students</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4 class="footer-heading">Product</h4>
+                        <ul class="footer-list">
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#how-it-works">How It Works</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4 class="footer-heading">Account</h4>
+                        <ul class="footer-list">
+                            <li><a href="{% url 'login' %}">Login</a></li>
+                            <li><a href="{% url 'register' %}">Sign Up</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom"><p>&copy; 2026 StudyBuddy. All rights reserved.</p></div>
+        </div>
+    </footer>
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}StudyBuddy{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if messages %}
+    <div style="position:fixed;top:1rem;right:1rem;z-index:9999;">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %}" style="margin-bottom:0.5rem;min-width:300px;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    <script>setTimeout(()=>{document.querySelectorAll('.alert').forEach(a=>a.remove())},3000)</script>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

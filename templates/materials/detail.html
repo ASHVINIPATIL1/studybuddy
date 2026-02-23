@@ -1,0 +1,422 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ material.title }} - StudyBuddy</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/study-session.css' %}">
+    <style>
+        .generate-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+        }
+        .generate-panel h4 { margin-bottom: var(--spacing-md); color: var(--text-primary); }
+        .generate-inputs { display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-md); }
+        .generate-inputs input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            text-align: center;
+        }
+        .generate-inputs label { font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 4px; }
+        .generating-status {
+            display: none;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: rgba(91,79,233,0.05);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            color: var(--primary);
+        }
+        .generating-status.show { display: flex; }
+    </style>
+</head>
+<body>
+    <nav class="topbar">
+        <div class="topbar-left">
+            <a href="{% url 'landing' %}" class="back-btn" title="Home">
+                <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#5B4FE9"/>
+                    <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" fill="white"/>
+                </svg>
+            </a>
+            <a href="{% url 'dashboard' %}" class="back-btn" title="Dashboard">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="15" y1="10" x2="5" y2="10"></line>
+                    <polyline points="10 15 5 10 10 5"></polyline>
+                </svg>
+            </a>
+            <h1 class="session-title">{{ material.title }}</h1>
+        </div>
+        <div class="topbar-right">
+            <span class="badge badge-primary">{{ material.subject }}</span>
+            <a href="{% url 'delete_material' material.pk %}" class="btn btn-ghost btn-sm" onclick="return confirm('Delete this material?')">Delete</a>
+            <!-- Profile -->
+            <div style="position:relative;">
+                <div class="user-avatar" id="profileToggle" style="cursor:pointer;">
+                    <span>{{ request.user.username|first|upper }}</span>
+                </div>
+                <div id="profileDropdown" style="display:none;position:absolute;right:0;top:48px;width:220px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:200;padding:var(--spacing-md);">
+                    <p style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">{{ request.user.username }}</p>
+                    <p style="font-size:0.8rem;color:var(--text-tertiary);margin-bottom:var(--spacing-md);">{{ request.user.email }}</p>
+                    <div style="border-top:1px solid var(--border);padding-top:var(--spacing-md);">
+                        <a href="{% url 'progress' %}" style="display:block;padding:0.5rem;border-radius:var(--radius-md);color:var(--text-secondary);font-size:0.875rem;text-decoration:none;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='none'">📊 My Progress</a>
+                        <a href="{% url 'dashboard' %}" style="display:block;padding:0.5rem;border-radius:var(--radius-md);color:var(--text-secondary);font-size:0.875rem;text-decoration:none;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='none'">🏠 Dashboard</a>
+                        <a href="{% url 'logout' %}" style="display:block;padding:0.5rem;border-radius:var(--radius-md);color:var(--error);font-size:0.875rem;text-decoration:none;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='none'">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="session-container">
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar left-sidebar">
+            <div class="sidebar-header">
+                <h3 class="sidebar-title">Study Materials</h3>
+            </div>
+
+            <div class="sidebar-section">
+                <h4 class="section-label">Uploaded File</h4>
+                <div class="file-list">
+                    <div class="file-item">
+                        <div class="file-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                        </div>
+                        <div class="file-info">
+                            <p class="file-name">{{ material.file.name|slice:"10:" }}</p>
+                            <p class="file-meta">{{ material.uploaded_at|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GENERATE PANEL -->
+            <div class="sidebar-section">
+                <h4 class="section-label">Generate Content</h4>
+                <div class="generate-panel">
+                    <div class="generate-inputs">
+                        <div style="flex:1;">
+                            <label>Questions</label>
+                            <input type="number" id="numQuestions" value="10" min="1" max="30">
+                        </div>
+                        <div style="flex:1;">
+                            <label>Flashcards</label>
+                            <input type="number" id="numFlashcards" value="10" min="1" max="30">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" style="width:100%;" onclick="generateContent()">
+                        ⚡ Generate Now
+                    </button>
+                    <div class="generating-status" id="generatingStatus">
+                        <div class="loader loader-sm"></div>
+                        <span>AI is generating... please wait</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h4 class="section-label">Quick Actions</h4>
+                <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                    <a href="{% url 'take_quiz' material.pk %}" class="btn btn-primary btn-sm">📝 Take Quiz</a>
+                    <a href="{% url 'flashcards' material.pk %}" class="btn btn-secondary btn-sm">🃏 Flashcards</a>
+                    <a href="{% url 'progress' %}" class="btn btn-secondary btn-sm">📊 My Progress</a>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h4 class="section-label">Stats</h4>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <p class="stat-value" id="questionCount">{{ questions|length }}</p>
+                        <p class="stat-label">Questions</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-value" id="flashcardCount">{{ flashcards|length }}</p>
+                        <p class="stat-label">Flashcards</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if attempts %}
+            <div class="sidebar-section">
+                <h4 class="section-label">Past Attempts</h4>
+                {% for attempt in attempts %}
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border);">
+                    <span style="font-size:0.8rem;color:var(--text-secondary);">{{ attempt.attempted_at|date:"M d" }}</span>
+                    <span class="badge {% if attempt.percentage >= 70 %}badge-success{% elif attempt.percentage >= 40 %}badge-warning{% else %}badge-error{% endif %}">{{ attempt.percentage }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </aside>
+
+        <!-- CENTER PANEL - CHAT -->
+        <main class="main-panel">
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Welcome message -->
+                    <div class="message assistant-message">
+                        <div class="message-avatar">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <rect width="24" height="24" rx="6" fill="#5B4FE9"/>
+                                <path d="M12 6L18 9V15L12 18L6 15V9L12 6Z" fill="white"/>
+                            </svg>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-text">
+                                <p>👋 Hey! I've analyzed <strong>{{ material.title }}</strong>.</p>
+                                <p>I've generated <strong>{{ questions|length }} quiz questions</strong> and <strong>{{ flashcards|length }} flashcards</strong>.</p>
+                                <p>Use the left panel to regenerate with custom counts, or ask me anything!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Load saved chat history -->
+                    {% for msg in chat_history %}
+                    <div class="message {% if msg.role == 'user' %}user-message{% else %}assistant-message{% endif %}">
+                        {% if msg.role == 'user' %}
+                        <div class="message-content">
+                            <div class="message-text"><p>{{ msg.content }}</p></div>
+                        </div>
+                        <div class="message-avatar user-avatar">
+                            <span>{{ request.user.username|first|upper }}</span>
+                        </div>
+                        {% else %}
+                        <div class="message-avatar">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <rect width="24" height="24" rx="6" fill="#5B4FE9"/>
+                                <path d="M12 6L18 9V15L12 18L6 15V9L12 6Z" fill="white"/>
+                            </svg>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-text"><p>{{ msg.content|linebreaksbr }}</p></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <textarea class="chat-input" id="chatInput" placeholder="Ask a question about your study material..." rows="1"></textarea>
+                        <button class="send-btn" id="sendBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="chat-hint">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                        AI can make mistakes. Verify important information.
+                    </p>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT SIDEBAR -->
+        <aside class="sidebar right-sidebar">
+            <div class="sidebar-header">
+                <h3 class="sidebar-title">Resources</h3>
+            </div>
+
+            <div class="sidebar-section">
+                <a href="{% url 'take_quiz' material.pk %}" class="resource-card" style="display:block;text-decoration:none;">
+                    <div class="resource-icon" style="background-color:rgba(91,79,233,0.1);">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#5B4FE9" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                        </svg>
+                    </div>
+                    <h4 class="resource-title">Take Quiz</h4>
+                    <p class="resource-count" id="rightQuestionCount">{{ questions|length }}</p>
+                    <p class="resource-subtitle">MCQ Questions</p>
+                </a>
+            </div>
+
+            <div class="sidebar-section">
+                <a href="{% url 'flashcards' material.pk %}" class="resource-card" style="display:block;text-decoration:none;">
+                    <div class="resource-icon" style="background-color:rgba(16,185,129,0.1);">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                        </svg>
+                    </div>
+                    <h4 class="resource-title">Flashcards</h4>
+                    <p class="resource-count" id="rightFlashcardCount">{{ flashcards|length }}</p>
+                    <p class="resource-subtitle">Review key concepts</p>
+                </a>
+            </div>
+
+            <div class="sidebar-section">
+                <h4 class="section-label">Material Info</h4>
+                <div style="font-size:0.875rem;color:var(--text-secondary);">
+                    <p style="margin-bottom:0.5rem;">📚 Subject: <strong>{{ material.subject }}</strong></p>
+                    <p style="margin-bottom:0.5rem;">📅 Uploaded: <strong>{{ material.uploaded_at|date:"M d, Y" }}</strong></p>
+                    <p style="margin:0;">✅ Status: <strong style="color:var(--success);">Ready</strong></p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const materialPk = {{ material.pk }};
+
+        // Profile dropdown
+        document.getElementById('profileToggle').addEventListener('click', function() {
+            const d = document.getElementById('profileDropdown');
+            d.style.display = d.style.display === 'none' ? 'block' : 'none';
+        });
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('profileToggle').contains(e.target)) {
+                document.getElementById('profileDropdown').style.display = 'none';
+            }
+        });
+
+        // Generate content
+        function generateContent() {
+            const numQ = document.getElementById('numQuestions').value;
+            const numF = document.getElementById('numFlashcards').value;
+            const status = document.getElementById('generatingStatus');
+            status.classList.add('show');
+
+            fetch(`/material/${materialPk}/generate/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `num_questions=${numQ}&num_flashcards=${numF}`
+            })
+            .then(r => r.json())
+            .then(data => {
+                status.classList.remove('show');
+                if (data.success) {
+                    document.getElementById('questionCount').textContent = data.questions;
+                    document.getElementById('flashcardCount').textContent = data.flashcards;
+                    document.getElementById('rightQuestionCount').textContent = data.questions;
+                    document.getElementById('rightFlashcardCount').textContent = data.flashcards;
+                    addMessage(`✅ Generated ${data.questions} questions and ${data.flashcards} flashcards successfully!`, 'assistant');
+                } else {
+                    addMessage(`❌ Error: ${data.error}`, 'assistant');
+                }
+            })
+            .catch(() => {
+                status.classList.remove('show');
+                addMessage('❌ Something went wrong. Please try again.', 'assistant');
+            });
+        }
+
+        // Chat
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+        });
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        sendBtn.addEventListener('click', sendMessage);
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            addMessage(message, 'user');
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+            addTyping();
+
+            fetch(`/material/${materialPk}/chat/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ message: message })
+            })
+            .then(r => r.json())
+            .then(data => {
+                removeTyping();
+                addMessage(data.response, 'assistant');
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                chatInput.focus();
+            })
+            .catch(() => {
+                removeTyping();
+                addMessage('Sorry, something went wrong.', 'assistant');
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+            });
+        }
+
+        function addMessage(text, type) {
+            const div = document.createElement('div');
+            div.className = `message ${type}-message`;
+            if (type === 'user') {
+                div.innerHTML = `
+                    <div class="message-content"><div class="message-text"><p>${escapeHtml(text)}</p></div></div>
+                    <div class="message-avatar user-avatar"><span>{{ request.user.username|first|upper }}</span></div>`;
+            } else {
+                div.innerHTML = `
+                    <div class="message-avatar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect width="24" height="24" rx="6" fill="#5B4FE9"/>
+                            <path d="M12 6L18 9V15L12 18L6 15V9L12 6Z" fill="white"/>
+                        </svg>
+                    </div>
+                    <div class="message-content"><div class="message-text"><p>${text.replace(/\n/g,'<br>')}</p></div></div>`;
+            }
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addTyping() {
+            const div = document.createElement('div');
+            div.className = 'message assistant-message';
+            div.id = 'typingIndicator';
+            div.innerHTML = `
+                <div class="message-avatar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect width="24" height="24" rx="6" fill="#5B4FE9"/>
+                        <path d="M12 6L18 9V15L12 18L6 15V9L12 6Z" fill="white"/>
+                    </svg>
+                </div>
+                <div class="message-content"><div class="message-text"><p style="color:var(--text-tertiary);">Thinking...</p></div></div>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeTyping() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    </script>
+</body>
+</html>

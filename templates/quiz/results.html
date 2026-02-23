@@ -1,0 +1,239 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Results - StudyBuddy</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <style>
+        .results-page { min-height: 100vh; background: var(--bg-primary); }
+        .topbar {
+            height: 64px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .results-body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--spacing-2xl) var(--spacing-xl);
+        }
+        .score-hero {
+            text-align: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+            margin-bottom: var(--spacing-xl);
+        }
+        .score-emoji { font-size: 4rem; margin-bottom: var(--spacing-md); }
+        .score-title { font-size: 2rem; font-weight: 700; margin-bottom: var(--spacing-sm); }
+        .score-subtitle { color: var(--text-secondary); margin-bottom: var(--spacing-xl); }
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--spacing-xl);
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+        }
+        .score-high-bg { background: linear-gradient(135deg, var(--success), #34D399); }
+        .score-mid-bg  { background: linear-gradient(135deg, var(--warning), #FCD34D); }
+        .score-low-bg  { background: linear-gradient(135deg, var(--error), #FCA5A5); }
+        .score-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+        }
+        .result-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            border-left: 4px solid var(--border);
+        }
+        .result-item.correct { border-left-color: var(--success); }
+        .result-item.wrong { border-left-color: var(--error); }
+        .result-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+        .question-text {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            flex: 1;
+        }
+        .result-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .badge-correct { background: rgba(16,185,129,0.1); color: var(--success); }
+        .badge-wrong   { background: rgba(239,68,68,0.1);  color: var(--error); }
+        .answer-row {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            margin-bottom: var(--spacing-sm);
+        }
+        .answer-tag {
+            padding: 0.375rem 0.875rem;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+        .user-answer-wrong { background: rgba(239,68,68,0.1); color: var(--error); }
+        .user-answer-correct { background: rgba(16,185,129,0.1); color: var(--success); }
+        .correct-answer-tag { background: rgba(16,185,129,0.1); color: var(--success); font-weight: 600; }
+        .explanation-box {
+            background: rgba(91,79,233,0.05);
+            border-left: 3px solid var(--primary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: var(--spacing-sm);
+        }
+        .options-review {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+        }
+        .option-review {
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .option-review.is-correct { background: rgba(16,185,129,0.1); border-color: var(--success); color: var(--success); font-weight: 600; }
+        .option-review.is-wrong   { background: rgba(239,68,68,0.1);  border-color: var(--error);   color: var(--error); }
+        @media(max-width:600px) {
+            .options-review { grid-template-columns: 1fr; }
+            .score-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="results-page">
+        <nav class="topbar">
+            <a href="{% url 'landing' %}" class="topbar-logo">
+                <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#5B4FE9"/>
+                    <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" fill="white"/>
+                </svg>
+                StudyBuddy
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-ghost btn-sm">← Dashboard</a>
+        </nav>
+
+        <div class="results-body">
+            <!-- Score Hero -->
+            <div class="score-hero">
+                <div class="score-emoji">
+                    {% if attempt.percentage >= 70 %}🎉{% elif attempt.percentage >= 40 %}💪{% else %}📚{% endif %}
+                </div>
+                <div class="score-circle {% if attempt.percentage >= 70 %}score-high-bg{% elif attempt.percentage >= 40 %}score-mid-bg{% else %}score-low-bg{% endif %}">
+                    {{ attempt.percentage }}%
+                </div>
+                <h1 class="score-title">
+                    {% if attempt.percentage >= 70 %}Great Job!
+                    {% elif attempt.percentage >= 40 %}Keep Going!
+                    {% else %}Keep Studying!{% endif %}
+                </h1>
+                <p class="score-subtitle">
+                    You scored <strong>{{ attempt.score }} out of {{ attempt.total_questions }}</strong> on {{ material.title }}
+                </p>
+                <div class="score-actions">
+                    <a href="{% url 'take_quiz' material.pk %}?difficulty=all" class="btn btn-primary">🔁 Retake Quiz</a>
+                    {% if wrong_ids %}
+                    <a href="{% url 'retry_wrong' material.pk %}?ids={{ wrong_ids }}" class="btn btn-secondary" style="background:rgba(239,68,68,0.1);color:var(--error);border:2px solid var(--error);">❌ Retry Wrong Only</a>
+                    {% endif %}
+                    <a href="{% url 'flashcards' material.pk %}" class="btn btn-secondary">🃏 Flashcards</a>
+                    <a href="{% url 'material_detail' material.pk %}" class="btn btn-secondary">💬 Study More</a>
+                    <a href="{% url 'progress' %}" class="btn btn-secondary">📊 Progress</a>
+                </div>
+            </div>
+
+            <!-- Detailed Results -->
+            <h2 class="section-title">📋 Detailed Results</h2>
+
+            {% for result in results %}
+            <div class="result-item {% if result.is_correct %}correct{% else %}wrong{% endif %}">
+                <div class="result-header">
+                    <p class="question-text">Q{{ forloop.counter }}. {{ result.question.question_text }}</p>
+                    <span class="result-badge {% if result.is_correct %}badge-correct{% else %}badge-wrong{% endif %}">
+                        {% if result.is_correct %}✓ Correct{% else %}✗ Wrong{% endif %}
+                    </span>
+                </div>
+
+                <!-- Options -->
+                <div class="options-review">
+                    <div class="option-review {% if result.question.correct_answer == 'a' %}is-correct{% elif result.user_answer == 'a' and not result.is_correct %}is-wrong{% endif %}">
+                        A: {{ result.question.option_a }}
+                    </div>
+                    <div class="option-review {% if result.question.correct_answer == 'b' %}is-correct{% elif result.user_answer == 'b' and not result.is_correct %}is-wrong{% endif %}">
+                        B: {{ result.question.option_b }}
+                    </div>
+                    <div class="option-review {% if result.question.correct_answer == 'c' %}is-correct{% elif result.user_answer == 'c' and not result.is_correct %}is-wrong{% endif %}">
+                        C: {{ result.question.option_c }}
+                    </div>
+                    <div class="option-review {% if result.question.correct_answer == 'd' %}is-correct{% elif result.user_answer == 'd' and not result.is_correct %}is-wrong{% endif %}">
+                        D: {{ result.question.option_d }}
+                    </div>
+                </div>
+
+                {% if not result.is_correct %}
+                <div class="answer-row">
+                    <span class="answer-tag user-answer-wrong">Your answer: {{ result.user_answer|upper }}</span>
+                    <span class="answer-tag correct-answer-tag">✓ Correct: {{ result.question.correct_answer|upper }}</span>
+                </div>
+                {% endif %}
+
+                {% if result.question.explanation %}
+                <div class="explanation-box">
+                    💡 <strong>Explanation:</strong> {{ result.question.explanation }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

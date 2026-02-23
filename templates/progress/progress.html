@@ -1,0 +1,251 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress - StudyBuddy</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .page-layout { min-height: 100vh; background: var(--bg-primary); }
+        .topbar {
+            height: 64px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .page-body {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: var(--spacing-2xl) var(--spacing-xl);
+        }
+        .page-header {
+            margin-bottom: var(--spacing-xl);
+        }
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+        .page-header p { color: var(--text-secondary); margin: 0; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: var(--spacing-xs);
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+        }
+        .chart-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+        }
+        .attempts-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .attempts-table th {
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+        .attempts-table td {
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+        }
+        .attempts-table tr:last-child td { border-bottom: none; }
+        .attempts-table tr:hover td { background: var(--bg-tertiary); }
+        .score-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .score-high { background: rgba(16,185,129,0.1); color: var(--success); }
+        .score-mid  { background: rgba(245,158,11,0.1); color: var(--warning); }
+        .score-low  { background: rgba(239,68,68,0.1); color: var(--error); }
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-tertiary);
+        }
+        @media(max-width:768px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .page-body { padding: var(--spacing-md); }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <nav class="topbar">
+            <a href="{% url 'dashboard' %}" class="topbar-logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#5B4FE9"/>
+                    <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" fill="white"/>
+                </svg>
+                StudyBuddy
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-ghost btn-sm">← Dashboard</a>
+        </nav>
+
+        <div class="page-body">
+            <div class="page-header">
+                <h1>📊 Your Progress</h1>
+                <p>Track your learning journey and quiz performance</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ total_attempts }}</div>
+                    <div class="stat-label">Total Quizzes Taken</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ avg_score }}%</div>
+                    <div class="stat-label">Average Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        {% if avg_score >= 70 %}🔥{% elif avg_score >= 40 %}💪{% else %}📚{% endif %}
+                    </div>
+                    <div class="stat-label">
+                        {% if avg_score >= 70 %}On Fire!{% elif avg_score >= 40 %}Keep Going!{% else %}Keep Studying!{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if attempts %}
+            <!-- Chart -->
+            <div class="chart-card">
+                <h2 class="section-title">Score History</h2>
+                <canvas id="progressChart" height="100"></canvas>
+            </div>
+
+            <!-- Attempts Table -->
+            <h2 class="section-title">All Quiz Attempts</h2>
+            <table class="attempts-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Date</th>
+                        <th>Score</th>
+                        <th>Questions</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in attempts %}
+                    <tr>
+                        <td><strong>{{ attempt.material.title }}</strong></td>
+                        <td>{{ attempt.attempted_at|date:"M d, Y • h:i A" }}</td>
+                        <td>{{ attempt.score }} / {{ attempt.total_questions }}</td>
+                        <td>{{ attempt.total_questions }} Qs</td>
+                        <td>
+                            <span class="score-badge {% if attempt.percentage >= 70 %}score-high{% elif attempt.percentage >= 40 %}score-mid{% else %}score-low{% endif %}">
+                                {{ attempt.percentage }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <script>
+                const ctx = document.getElementById('progressChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [{% for a in attempts reversed %}"{{ a.attempted_at|date:'M d' }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                        datasets: [{
+                            label: 'Score %',
+                            data: [{% for a in attempts reversed %}{{ a.percentage }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                            borderColor: '#5B4FE9',
+                            backgroundColor: 'rgba(91,79,233,0.1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#5B4FE9',
+                            pointRadius: 5,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { callback: val => val + '%' }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            </script>
+
+            {% else %}
+            <div class="empty-state">
+                <p style="font-size:3rem;margin-bottom:1rem;">📝</p>
+                <p>No quiz attempts yet.</p>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary" style="margin-top:1rem;">Go Take a Quiz!</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

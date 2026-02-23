@@ -1,0 +1,234 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Material - StudyBuddy</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <style>
+        .page-layout {
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+        }
+        .topbar {
+            height: 64px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .page-body {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: var(--spacing-2xl) var(--spacing-xl);
+        }
+        .page-header {
+            margin-bottom: var(--spacing-xl);
+        }
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+        .page-header p {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        .upload-form {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+        }
+        .drop-zone {
+            border: 2px dashed var(--border-dark);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            background: var(--bg-primary);
+            margin-bottom: var(--spacing-lg);
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(91,79,233,0.02);
+        }
+        .drop-zone svg { color: var(--text-tertiary); margin: 0 auto var(--spacing-md); }
+        .drop-zone h3 { font-size: 1rem; color: var(--text-primary); margin-bottom: var(--spacing-xs); }
+        .drop-zone p { font-size: 0.875rem; color: var(--text-tertiary); margin: 0; }
+        .file-selected {
+            display: none;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: rgba(91,79,233,0.05);
+            border: 1px solid rgba(91,79,233,0.2);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        .file-selected.show { display: flex; }
+        .file-selected svg { color: var(--primary); flex-shrink: 0; }
+        .file-selected p { margin: 0; font-size: 0.9rem; color: var(--text-primary); font-weight: 500; }
+        .processing-note {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: rgba(245,158,11,0.05);
+            border: 1px solid rgba(245,158,11,0.2);
+            border-radius: var(--radius-md);
+            margin-top: var(--spacing-lg);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        .btn-full { width: 100%; }
+        .form-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-xl);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <nav class="topbar">
+            <a href="{% url 'dashboard' %}" class="topbar-logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#5B4FE9"/>
+                    <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" fill="white"/>
+                </svg>
+                StudyBuddy
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-ghost btn-sm">← Back to Dashboard</a>
+        </nav>
+
+        <div class="page-body">
+            <div class="page-header">
+                <h1>Upload Study Material</h1>
+                <p>Upload your PDF and AI will generate questions and flashcards automatically</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" style="margin-bottom:1rem;">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="upload-form">
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="form-label">Material Title</label>
+                        <input type="text" name="title" class="form-input" placeholder="e.g. Data Structures 2023 Question Paper" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Subject</label>
+                        <input type="text" name="subject" class="form-input" placeholder="e.g. Data Structures, DBMS, OS" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">PDF File</label>
+                        <div class="drop-zone" id="dropZone">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                            </svg>
+                            <h3>Drag & drop your PDF here</h3>
+                            <p>or click to browse files</p>
+                            <input type="file" name="file" id="fileInput" accept=".pdf" hidden required>
+                        </div>
+                        <div class="file-selected" id="fileSelected">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            <p id="fileName">No file selected</p>
+                        </div>
+                    </div>
+
+                    <div class="processing-note">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" style="flex-shrink:0;margin-top:2px;">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <span>After uploading, AI will automatically generate <strong>10 quiz questions</strong> and <strong>10 flashcards</strong> from your PDF. This may take 15–30 seconds.</span>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary" style="flex:1;text-align:center;">Cancel</a>
+                        <button type="submit" class="btn btn-primary" style="flex:2;" id="submitBtn">
+                            Upload & Generate
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileSelected = document.getElementById('fileSelected');
+        const fileName = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                fileInput.files = e.dataTransfer.files;
+                showFile(file.name);
+            } else {
+                alert('Please upload a PDF file only.');
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files[0]) showFile(fileInput.files[0].name);
+        });
+
+        function showFile(name) {
+            fileName.textContent = name;
+            fileSelected.classList.add('show');
+            dropZone.style.display = 'none';
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', () => {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<div class="loader loader-sm" style="display:inline-block;margin-right:8px;vertical-align:middle;"></div> Processing...`;
+        });
+    </script>
+</body>
+</html>
