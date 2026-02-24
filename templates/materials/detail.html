@@ -80,53 +80,79 @@
 
     <div class="session-container">
         <!-- LEFT SIDEBAR -->
-        <aside class="sidebar left-sidebar">
+        <aside class="sidebar left-sidebar" id="leftSidebar">
             <div class="sidebar-header">
                 <h3 class="sidebar-title">Study Materials</h3>
             </div>
 
+            <!-- FILES LIST -->
             <div class="sidebar-section">
-                <h4 class="section-label">Uploaded File</h4>
-                <div class="file-list">
-                    <div class="file-item">
-                        <div class="file-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-sm);">
+                    <h4 class="section-label" style="margin:0;">Uploaded Files</h4>
+                    <button onclick="document.getElementById('addFileInput').click()" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:0.8rem;font-weight:600;">+ Add</button>
+                    <input type="file" id="addFileInput" accept=".pdf" multiple hidden>
+                </div>
+
+                <div id="filesList">
+                    {% for f in mat_files %}
+                    <div class="file-item" id="fileItem-{{ f.pk }}" style="display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-sm);border-radius:var(--radius-md);margin-bottom:var(--spacing-xs);border:1px solid var(--border);">
+                        <input type="checkbox" class="file-checkbox" value="{{ f.pk }}" id="file-{{ f.pk }}" checked
+                            style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;flex-shrink:0;">
+                        <div class="file-icon" style="flex-shrink:0;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                                 <polyline points="14 2 14 8 20 8"/>
                             </svg>
                         </div>
-                        <div class="file-info">
-                            <p class="file-name">{{ material.file.name|slice:"10:" }}</p>
-                            <p class="file-meta">{{ material.uploaded_at|date:"M d, Y" }}</p>
+                        <div style="flex:1;min-width:0;">
+                            <p style="margin:0;font-size:0.8rem;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ f.filename }}">{{ f.filename }}</p>
+                            <p style="margin:0;font-size:0.7rem;color:var(--text-tertiary);">{{ f.uploaded_at|date:"M d, Y" }}</p>
                         </div>
+                        <button onclick="deleteFile({{ f.pk }})" style="background:none;border:none;cursor:pointer;color:var(--text-tertiary);padding:2px;flex-shrink:0;" title="Remove">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
                     </div>
+                    {% empty %}
+                    <p style="font-size:0.8rem;color:var(--text-tertiary);text-align:center;padding:var(--spacing-md);">No files yet</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Upload status -->
+                <div id="uploadStatus" style="display:none;padding:var(--spacing-sm);background:rgba(91,79,233,0.05);border-radius:var(--radius-md);font-size:0.8rem;color:var(--primary);text-align:center;">
+                    Uploading...
                 </div>
             </div>
 
             <!-- GENERATE PANEL -->
             <div class="sidebar-section">
                 <h4 class="section-label">Generate Content</h4>
-                <div class="generate-panel">
-                    <div class="generate-inputs">
+                <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--spacing-md);">
+                    <div style="display:flex;gap:var(--spacing-sm);margin-bottom:var(--spacing-md);">
                         <div style="flex:1;">
-                            <label>Questions</label>
-                            <input type="number" id="numQuestions" value="10" min="1" max="30">
+                            <label style="font-size:0.75rem;color:var(--text-tertiary);display:block;margin-bottom:4px;">Questions</label>
+                            <input type="number" id="numQuestions" value="10" min="1" max="30" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius-md);font-size:0.875rem;text-align:center;">
                         </div>
                         <div style="flex:1;">
-                            <label>Flashcards</label>
-                            <input type="number" id="numFlashcards" value="10" min="1" max="30">
+                            <label style="font-size:0.75rem;color:var(--text-tertiary);display:block;margin-bottom:4px;">Flashcards</label>
+                            <input type="number" id="numFlashcards" value="10" min="1" max="30" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius-md);font-size:0.875rem;text-align:center;">
                         </div>
                     </div>
+                    <p style="font-size:0.75rem;color:var(--text-tertiary);margin-bottom:var(--spacing-sm);">
+                        Generate from: <strong id="selectedCount">all files</strong>
+                    </p>
                     <button class="btn btn-primary btn-sm" style="width:100%;" onclick="generateContent()">
                         ⚡ Generate Now
                     </button>
-                    <div class="generating-status" id="generatingStatus">
+                    <div id="generatingStatus" style="display:none;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-sm);background:rgba(91,79,233,0.05);border-radius:var(--radius-md);margin-top:var(--spacing-sm);font-size:0.875rem;color:var(--primary);">
                         <div class="loader loader-sm"></div>
-                        <span>AI is generating... please wait</span>
+                        <span>AI is generating...</span>
                     </div>
                 </div>
             </div>
 
+            <!-- QUICK ACTIONS -->
             <div class="sidebar-section">
                 <h4 class="section-label">Quick Actions</h4>
                 <div style="display:flex;flex-direction:column;gap:0.5rem;">
@@ -136,16 +162,17 @@
                 </div>
             </div>
 
+            <!-- STATS -->
             <div class="sidebar-section">
                 <h4 class="section-label">Stats</h4>
-                <div class="stat-grid">
-                    <div class="stat-card">
-                        <p class="stat-value" id="questionCount">{{ questions|length }}</p>
-                        <p class="stat-label">Questions</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-sm);">
+                    <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--spacing-md);text-align:center;">
+                        <p style="font-size:1.5rem;font-weight:700;color:var(--primary);margin:0;" id="questionCount">{{ questions|length }}</p>
+                        <p style="font-size:0.75rem;color:var(--text-tertiary);margin:0;">Questions</p>
                     </div>
-                    <div class="stat-card">
-                        <p class="stat-value" id="flashcardCount">{{ flashcards|length }}</p>
-                        <p class="stat-label">Flashcards</p>
+                    <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--spacing-md);text-align:center;">
+                        <p style="font-size:1.5rem;font-weight:700;color:var(--success);margin:0;" id="flashcardCount">{{ flashcards|length }}</p>
+                        <p style="font-size:0.75rem;color:var(--text-tertiary);margin:0;">Flashcards</p>
                     </div>
                 </div>
             </div>
@@ -417,6 +444,117 @@
         }
 
         chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // File checkboxes - update selected count
+        function updateSelectedCount() {
+            const checked = document.querySelectorAll('.file-checkbox:checked');
+            const total = document.querySelectorAll('.file-checkbox').length;
+            const countEl = document.getElementById('selectedCount');
+            if (checked.length === total) {
+                countEl.textContent = 'all files';
+            } else {
+                countEl.textContent = `${checked.length} of ${total} files`;
+            }
+        }
+
+        document.querySelectorAll('.file-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateSelectedCount);
+        });
+
+        // Add new files
+        document.getElementById('addFileInput').addEventListener('change', function() {
+            const files = this.files;
+            if (!files.length) return;
+
+            const status = document.getElementById('uploadStatus');
+            status.style.display = 'block';
+            status.textContent = `Uploading ${files.length} file(s)...`;
+
+            const formData = new FormData();
+            for (let f of files) formData.append('files', f);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch(`/material/${materialPk}/add-file/`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                status.style.display = 'none';
+                if (data.success) {
+                    addMessage(`✅ Added ${data.count} file(s): ${data.added.join(', ')}`, 'assistant');
+                    // Reload page to show new files in sidebar
+                    location.reload();
+                } else {
+                    addMessage(`❌ Error: ${data.error}`, 'assistant');
+                }
+            })
+            .catch(() => {
+                status.style.display = 'none';
+                addMessage('❌ Upload failed. Please try again.', 'assistant');
+            });
+        });
+
+        // Delete file
+        function deleteFile(fileId) {
+            if (!confirm('Remove this file?')) return;
+            fetch(`/material/${materialPk}/delete-file/${fileId}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`fileItem-${fileId}`).remove();
+                    updateSelectedCount();
+                    addMessage('✅ File removed successfully.', 'assistant');
+                }
+            });
+        }
+
+        // Update generateContent to pass selected files
+        function generateContent() {
+            const numQ = document.getElementById('numQuestions').value;
+            const numF = document.getElementById('numFlashcards').value;
+            const status = document.getElementById('generatingStatus');
+
+            const checked = document.querySelectorAll('.file-checkbox:checked');
+            const selectedFiles = Array.from(checked).map(cb => cb.value);
+
+            status.style.display = 'flex';
+
+            const body = new URLSearchParams();
+            body.append('num_questions', numQ);
+            body.append('num_flashcards', numF);
+            selectedFiles.forEach(id => body.append('selected_files', id));
+
+            fetch(`/material/${materialPk}/generate/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: body.toString()
+            })
+            .then(r => r.json())
+            .then(data => {
+                status.style.display = 'none';
+                if (data.success) {
+                    document.getElementById('questionCount').textContent = data.questions;
+                    document.getElementById('flashcardCount').textContent = data.flashcards;
+                    document.getElementById('rightQuestionCount').textContent = data.questions;
+                    document.getElementById('rightFlashcardCount').textContent = data.flashcards;
+                    addMessage(`✅ Generated ${data.questions} questions and ${data.flashcards} flashcards!`, 'assistant');
+                } else {
+                    addMessage(`❌ Error: ${data.error}`, 'assistant');
+                }
+            })
+            .catch(() => {
+                status.style.display = 'none';
+                addMessage('❌ Something went wrong.', 'assistant');
+            });
+        }
+
     </script>
 </body>
 </html>

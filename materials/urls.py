@@ -9,4 +9,6 @@ urlpatterns = [
     path('material/<int:pk>/delete/', views.delete_material, name='delete_material'),
     path('material/<int:pk>/chat/', views.chat_view, name='chat'),
     path('material/<int:pk>/generate/', views.generate_content, name='generate_content'),
+    path('material/<int:pk>/add-file/', views.add_file, name='add_file'),
+    path('material/<int:pk>/delete-file/<int:file_id>/', views.delete_file, name='delete_file'),
 ]

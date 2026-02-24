@@ -2,10 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import StudyMaterial, ChatMessage
+from .models import StudyMaterial, ChatMessage, MaterialFile
 from .ai_helper import extract_text_from_pdf, generate_mcq_questions, generate_flashcards, chat_with_material
 from quiz.models import Question, Flashcard
 from progress.models import QuizAttempt
+from collections import defaultdict
 import json
 
 def landing(request):
@@ -25,12 +26,9 @@ def dashboard(request):
     if subject_filter:
         materials = materials.filter(subject__icontains=subject_filter)
 
-    # Get all unique subjects for filter tabs
     all_materials = StudyMaterial.objects.filter(user=request.user)
     subjects = list(all_materials.values_list('subject', flat=True).distinct())
 
-    # Group materials by subject
-    from collections import defaultdict
     grouped = defaultdict(list)
     for m in materials:
         grouped[m.subject].append(m)
@@ -51,26 +49,86 @@ def upload_material(request):
     if request.method == 'POST':
         title = request.POST['title']
         subject = request.POST['subject']
-        file = request.FILES['file']
+        files = request.FILES.getlist('files')
+        # getlist gets ALL uploaded files
 
+        if not files:
+            messages.error(request, 'Please upload at least one PDF file!')
+            return redirect('upload')
+
+        # Create material without file
         material = StudyMaterial.objects.create(
             user=request.user,
             title=title,
             subject=subject,
-            file=file
         )
 
-        try:
-            text = extract_text_from_pdf(material.file.path)
-            material.extracted_text = text
-            material.save()
-            messages.success(request, 'Material uploaded! You can now generate questions and flashcards.')
-        except Exception as e:
-            messages.error(request, f'Error processing file: {str(e)}')
+        # Process each file
+        combined_text = ""
+        for uploaded_file in files:
+            try:
+                mat_file = MaterialFile.objects.create(
+                    material=material,
+                    file=uploaded_file,
+                    filename=uploaded_file.name
+                )
+                text = extract_text_from_pdf(mat_file.file.path)
+                combined_text += "\n\n--- " + uploaded_file.name + " ---\n\n" + text
+            except Exception as e:
+                messages.error(request, 'Error reading ' + uploaded_file.name + ': ' + str(e))
 
+        material.extracted_text = combined_text
+        material.save()
+        messages.success(request, f'{len(files)} file(s) uploaded successfully!')
         return redirect('material_detail', pk=material.pk)
 
     return render(request, 'materials/upload.html')
+
+@login_required
+def add_file(request, pk):
+    material = get_object_or_404(StudyMaterial, pk=pk, user=request.user)
+    if request.method == 'POST':
+        files = request.FILES.getlist('files')
+        if not files:
+            return JsonResponse({'success': False, 'error': 'No files uploaded'})
+
+        added = []
+        for f in files:
+            try:
+                mat_file = MaterialFile.objects.create(
+                    material=material,
+                    file=f,
+                    filename=f.name
+                )
+                text = extract_text_from_pdf(mat_file.file.path)
+                # Append new text to existing
+                material.extracted_text += f"\n\n--- {f.name} ---\n\n" + text
+                material.save()
+                added.append(f.name)
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': str(e)})
+
+        return JsonResponse({'success': True, 'added': added, 'count': len(added)})
+    return JsonResponse({'error': 'Invalid request'})
+
+@login_required
+def delete_file(request, pk, file_id):
+    material = get_object_or_404(StudyMaterial, pk=pk, user=request.user)
+    mat_file = get_object_or_404(MaterialFile, pk=file_id, material=material)
+    mat_file.delete()
+
+    # Rebuild extracted text from remaining files
+    combined_text = ""
+    for f in material.files.all():
+        try:
+            text = extract_text_from_pdf(f.file.path)
+            combined_text += f"\n\n--- {f.filename} ---\n\n" + text
+        except:
+            pass
+    material.extracted_text = combined_text
+    material.save()
+
+    return JsonResponse({'success': True})
 
 @login_required
 def generate_content(request, pk):
@@ -78,13 +136,28 @@ def generate_content(request, pk):
     if request.method == 'POST':
         num_questions = int(request.POST.get('num_questions', 10))
         num_flashcards = int(request.POST.get('num_flashcards', 10))
+        selected_files = request.POST.getlist('selected_files')
+        # selected_files = list of file IDs user selected
 
         try:
-            # Delete old questions and flashcards
+            # Build text from selected files only
+            if selected_files:
+                text = ""
+                for file_id in selected_files:
+                    try:
+                        mat_file = MaterialFile.objects.get(pk=file_id, material=material)
+                        file_text = extract_text_from_pdf(mat_file.file.path)
+                        text += f"\n\n--- {mat_file.filename} ---\n\n" + file_text
+                    except:
+                        pass
+            else:
+                text = material.extracted_text
+            # If no files selected use all text
+
             Question.objects.filter(material=material).delete()
             Flashcard.objects.filter(material=material).delete()
 
-            questions = generate_mcq_questions(material.extracted_text, num_questions)
+            questions = generate_mcq_questions(text, num_questions)
             for q in questions:
                 Question.objects.create(
                     material=material,
@@ -99,7 +172,7 @@ def generate_content(request, pk):
                     question_type='mcq'
                 )
 
-            flashcards = generate_flashcards(material.extracted_text, num_flashcards)
+            flashcards = generate_flashcards(text, num_flashcards)
             for f in flashcards:
                 Flashcard.objects.create(
                     material=material,
@@ -107,7 +180,11 @@ def generate_content(request, pk):
                     back=f['back']
                 )
 
-            return JsonResponse({'success': True, 'questions': len(questions), 'flashcards': len(flashcards)})
+            return JsonResponse({
+                'success': True,
+                'questions': len(questions),
+                'flashcards': len(flashcards)
+            })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
 
@@ -120,12 +197,14 @@ def material_detail(request, pk):
     flashcards = Flashcard.objects.filter(material=material)
     attempts = QuizAttempt.objects.filter(user=request.user, material=material).order_by('-attempted_at')
     chat_history = ChatMessage.objects.filter(material=material, user=request.user)
+    mat_files = material.files.all()
     return render(request, 'materials/detail.html', {
         'material': material,
         'questions': questions,
         'flashcards': flashcards,
         'attempts': attempts,
         'chat_history': chat_history,
+        'mat_files': mat_files,
     })
 
 @login_required
@@ -141,12 +220,25 @@ def chat_view(request, pk):
     if request.method == 'POST':
         data = json.loads(request.body)
         user_message = data.get('message', '')
-        # Load history from DB
+        selected_files = data.get('selected_files', [])
+
+        # Build text from selected files
+        if selected_files:
+            text = ""
+            for file_id in selected_files:
+                try:
+                    mat_file = MaterialFile.objects.get(pk=file_id, material=material)
+                    file_text = extract_text_from_pdf(mat_file.file.path)
+                    text += f"\n\n--- {mat_file.filename} ---\n\n" + file_text
+                except:
+                    pass
+        else:
+            text = material.extracted_text
+
         history = list(ChatMessage.objects.filter(
             material=material, user=request.user
         ).values('role', 'content'))
 
-        # Save user message
         ChatMessage.objects.create(
             material=material,
             user=request.user,
@@ -154,9 +246,8 @@ def chat_view(request, pk):
             content=user_message
         )
 
-        response = chat_with_material(material.extracted_text, user_message, history)
+        response = chat_with_material(text, user_message, history)
 
-        # Save assistant response
         ChatMessage.objects.create(
             material=material,
             user=request.user,
