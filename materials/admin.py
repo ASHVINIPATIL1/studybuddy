@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import StudyMaterial, ChatMessage
 
-# Register your models here.
+admin.site.register(StudyMaterial)
+admin.site.register(ChatMessage)
