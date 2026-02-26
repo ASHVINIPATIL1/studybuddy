@@ -17,7 +17,7 @@ def register_view(request):
             return redirect('register')
 
         # Validate email
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,3}$'
+        email_pattern = r'^[a-zA-Z0-9._]+@[a-zA-Z0-9.-]+\.(com|in|edu|org|net|gov)$'
         if not re.match(email_pattern, email):
             messages.error(request, 'Please enter a valid email address!')
             return redirect('register')
