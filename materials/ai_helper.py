@@ -118,7 +118,7 @@ def generate_flashcards(text, num_cards=10):
 
 def chat_with_material(text, user_message, chat_history=[]):
     messages = [
-        {"role": "system", "content": f"""You are a helpful study assistant. Answer questions based on the study material below. Be concise, clear and helpful.
+        {"role": "system", "content": f"""You are a helpful study assistant. Answer questions strictly based on the study material below (do not answer the question if the topic of question is too unrelated to the material provided "eg -: Material = DSA , Question = HTML , How to cook". Though you can answer the questions which are closely related to the topic). Be concise, clear and helpful.
 
 Study Material:
 {text[:3000]}"""}
