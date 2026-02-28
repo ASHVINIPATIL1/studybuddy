@@ -60,10 +60,11 @@
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-tertiary);margin:0 auto var(--spacing-md);display:block;">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                             </svg>
-                            <h3 style="font-size:1rem;color:var(--text-primary);margin-bottom:var(--spacing-xs);">Drag & drop PDFs here</h3>
+                            <h3 style="font-size:1rem;color:var(--text-primary);margin-bottom:var(--spacing-xs);">Drag & drop files here</h3>
                             <p style="font-size:0.875rem;color:var(--text-tertiary);margin:0 0 var(--spacing-md);">or click to browse</p>
+                            <p style="font-size:0.75rem;color:var(--text-tertiary);margin:0;">PDF, Word, PowerPoint, TXT supported — Max 15MB per file</p>
                             <span class="btn btn-secondary btn-sm">Browse Files</span>
-                            <input type="file" name="files" id="fileInput" accept=".pdf" multiple hidden required>
+                            <input type="file" name="files" id="fileInput" accept=".pdf,.docx,.txt,.pptx,.doc" multiple hidden required>
                         </div>
 
                         <!-- File List -->
@@ -75,7 +76,7 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" style="flex-shrink:0;margin-top:2px;">
                             <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                         </svg>
-                        <span>All uploaded PDFs will be combined into one study material. You can add more files later from the material page.</span>
+                        <span>All uploaded Files will be combined into one study material. Maximum file size is 15MB per file. You can add more files later from the material page.</span>
                     </div>
 
                     <div style="display:flex;gap:var(--spacing-md);">
@@ -113,9 +114,9 @@
             e.preventDefault();
             dropZone.style.borderColor = 'var(--border-dark)';
             dropZone.style.background = 'var(--bg-primary)';
-            const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.name.match(/\.(pdf|docx|doc|txt|pptx)$/i));
             if (files.length === 0) {
-                alert('Please upload PDF files only.');
+                alert('Only PDF, Word, PowerPoint and TXT files are supported!');
                 return;
             }
             addFiles(files);
@@ -127,6 +128,15 @@
 
         function addFiles(files) {
             files.forEach(file => {
+                if (file.size > 15 * 1024 * 1024) {
+                    alert(`${file.name} exceeds 15MB limit!`);
+                    return;
+                }
+                const allowed = /\.(pdf|docx|doc|txt|pptx)$/i;
+                if (!allowed.test(file.name)) {
+                    alert(`${file.name} is not a supported file type!`);
+                    return;
+                }
                 if (!selectedFiles.find(f => f.name === file.name)) {
                     selectedFiles.push(file);
                 }

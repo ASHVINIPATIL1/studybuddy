@@ -50,13 +50,22 @@ def upload_material(request):
         title = request.POST['title']
         subject = request.POST['subject']
         files = request.FILES.getlist('files')
-        # getlist gets ALL uploaded files
 
         if not files:
-            messages.error(request, 'Please upload at least one PDF file!')
+            messages.error(request, 'Please upload at least one file!')
             return redirect('upload')
 
-        # Create material without file
+        # Validate ALL files BEFORE creating material
+        image_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.ico', '.heic')
+        for uploaded_file in files:
+            if uploaded_file.size > 15 * 1024 * 1024:
+                messages.error(request, f'{uploaded_file.name} exceeds the 15MB size limit!')
+                return redirect('upload')
+            if uploaded_file.name.lower().endswith(image_extensions):
+                messages.error(request, f'{uploaded_file.name} is an image file and is not supported!')
+                return redirect('upload')
+
+        # Only create material if all files pass validation
         material = StudyMaterial.objects.create(
             user=request.user,
             title=title,
@@ -65,6 +74,7 @@ def upload_material(request):
 
         # Process each file
         combined_text = ""
+        successful = 0
         for uploaded_file in files:
             try:
                 mat_file = MaterialFile.objects.create(
@@ -74,12 +84,18 @@ def upload_material(request):
                 )
                 text = extract_text_from_pdf(mat_file.file.path)
                 combined_text += "\n\n--- " + uploaded_file.name + " ---\n\n" + text
+                successful += 1
             except Exception as e:
                 messages.error(request, 'Error reading ' + uploaded_file.name + ': ' + str(e))
 
+        if successful == 0:
+            material.delete()
+            messages.error(request, 'No files could be processed. Material was not created.')
+            return redirect('upload')
+
         material.extracted_text = combined_text
         material.save()
-        messages.success(request, f'{len(files)} file(s) uploaded successfully!')
+        messages.success(request, f'{successful} file(s) uploaded successfully!')
         return redirect('material_detail', pk=material.pk)
 
     return render(request, 'materials/upload.html')

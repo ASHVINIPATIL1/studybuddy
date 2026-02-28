@@ -62,7 +62,7 @@ def generate_mcq_questions(text, num_questions=10):
     - Use only information present in the study material.
 
     Study Material:
-    {text[:4000]}
+    {text[:8000]}
 """
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -104,7 +104,7 @@ def generate_flashcards(text, num_cards=10):
     ]
 
     Study Material:
-    {text[:4000]}
+    {text[:8000]}
 """
 
     response = client.chat.completions.create(
@@ -121,7 +121,7 @@ def chat_with_material(text, user_message, chat_history=[]):
         {"role": "system", "content": f"""You are a helpful study assistant. Answer questions strictly based on the study material below (do not answer the question if the topic of question is too unrelated to the material provided "eg -: Material = DSA , Question = HTML , How to cook". Though you can answer the questions which are closely related to the topic). Be concise, clear and helpful.
 
 Study Material:
-{text[:3000]}"""}
+{text[:6000]}"""}
     ]
     for msg in chat_history[-6:]:
         messages.append({"role": msg['role'], "content": msg['content']})
